@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio GTA Style - Parcours Interactif</title>
+    <style>
+        /* Les styles restent inchangés */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            color: white;
+        }
+        
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        #loading-bar-container {
+            width: 50%;
+            height: 30px;
+            background-color: #333;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        #loading-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #4CAF50;
+            border-radius: 15px;
+            transition: width 0.3s;
+        }
+        
+        #game-ui {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #mission-title {
+            position: absolute;
+            top: 20%;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 3em;
+            text-transform: uppercase;
+            opacity: 0;
+            transition: opacity 1s;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        
+        #mission-subtitle {
+            position: absolute;
+            top: 30%;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 1.5em;
+            opacity: 0;
+            transition: opacity 1s;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        
+        #dialog-box {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+        }
+        
+        #dialog-text {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        
+        #dialog-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .dialog-option {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: background-color 0.3s;
+        }
+        
+        .dialog-option:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        #mini-map {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 200px;
+            height: 200px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        #skills {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .skill-bar {
+            width: 200px;
+            height: 15px;
+            background-color: #333;
+            margin-top: 5px;
+            border-radius: 7px;
+            overflow: hidden;
+        }
+        
+        .skill-progress {
+            height: 100%;
+            background-color: #4CAF50;
+        }
+        
+        #controls-info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        #start-button {
+            margin-top: 50px;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #start-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <h1>CHARGEMENT...</h1>
+        <div id="loading-bar-container">
+            <div id="loading-bar"></div>
+        </div>
+    </div>
+    
+    <div id="intro-screen">
+        <h1 style="font-size: 4em; margin-bottom: 20px; color: #4CAF50;">DEV LIFE</h1>
+        <h2 style="font-size: 2em; margin-bottom: 40px;">Le parcours d'un développeur</h2>
+        <button id="start-button">COMMENCER L'AVENTURE</button>
+    </div>
+    
+    <div id="game-ui">
+        <div id="mission-title"></div>
+        <div id="mission-subtitle"></div>
+        
+        <div id="dialog-box">
+            <div id="dialog-text"></div>
+            <div id="dialog-options"></div>
+        </div>
+        
+        <div id="mini-map">
+            <!-- Canvas pour la mini-carte sera ajouté ici par JavaScript -->
+        </div>
+        
+        <div id="skills">
+            <h3>COMPÉTENCES</h3>
+            <div>
+                <span>JavaScript</span>
+                <div class="skill-bar">
+                    <div class="skill-progress" style="width: 90%;"></div>
+                </div>
+            </div>
+            <div>
+                <span>Three.js</span>
+                <div class="skill-bar">
+                    <div class="skill-progress" style="width: 85%;"></div>
+                </div>
+            </div>
+            <div>
+                <span>React</span>
+                <div class="skill-bar">
+                    <div class="skill-progress" style="width: 80%;"></div>
+                </div>
+            </div>
+            <div>
+                <span>Node.js</span>
+                <div class="skill-bar">
+                    <div class="skill-progress" style="width: 75%;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="controls-info">
+            <p>WASD - Se déplacer</p>
+            <p>ESPACE - Sauter</p>
+            <p>E - Interagir</p>
+            <p>ESC - Menu</p>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
+    
+    <script>
+        // Variables pour la mini-carte
+        let miniMapCanvas, miniMapContext;
+        
+        // Simulation de chargement
+        let loadingProgress = 0;
+        const loadingBar = document.getElementById('loading-bar');
+        const loadingInterval = setInterval(() => {
+            loadingProgress += Math.random() * 10;
+            if (loadingProgress >= 100) {
+                loadingProgress = 100;
+                clearInterval(loadingInterval);
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                }, 500);
+            }
+            loadingBar.style.width = loadingProgress + '%';
+        }, 300);
+        
+        // Initialiser la mini-carte
+        function initMiniMap() {
+            const miniMapContainer = document.getElementById('mini-map');
+            
+            // Créer un canvas pour la mini-carte
+            miniMapCanvas = document.createElement('canvas');
+            miniMapCanvas.width = 200;
+            miniMapCanvas.height = 200;
+            miniMapContext = miniMapCanvas.getContext('2d');
+            
+            // Ajouter le canvas au conteneur
+            miniMapContainer.appendChild(miniMapCanvas);
+        }
+        
+        // Écran d'intro
+        document.getElementById('start-button').addEventListener('click', () => {
+            document.getElementById('intro-screen').style.display = 'none';
+            initMiniMap(); // Initialiser la mini-carte avant de démarrer le jeu
+            startGame();
+        });
+        
+        // Variables globales
+        let scene, camera, renderer, controls;
+        let moveForward = false;
+        let moveBackward = false;
+        let moveLeft = false;
+        let moveRight = false;
+        let canJump = false;
+        
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        
+        let prevTime = performance.now();
+        
+        // Missions et dialogues
+        const missions = [
+            {
+                title: "PREMIERS PAS",
+                subtitle: "Le début d'une grande aventure",
+                location: new THREE.Vector3(0, 0, -10),
+                dialogues: [
+                    {
+                        text: "Bienvenue dans le monde du développement ! Je suis ton mentor. Prêt à commencer ton parcours ?",
+                        options: [
+                            { text: "Oui, je suis prêt à apprendre !", nextIndex: 1 },
+                            { text: "Qu'est-ce que je vais apprendre ?", nextIndex: 2 }
+                        ]
+                    },
+                    {
+                        text: "Excellent ! Ton premier projet sera de créer un site web simple. Dirigeons-nous vers le bâtiment de formation.",
+                        options: [
+                            { text: "Allons-y !", nextIndex: -1, action: "goToNextMission" }
+                        ]
+                    },
+                    {
+                        text: "Tu vas apprendre HTML, CSS et JavaScript pour commencer. Ce sont les bases du développement web.",
+                        options: [
+                            { text: "Ça a l'air passionnant !", nextIndex: 1 }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "PREMIER EMPLOI",
+                subtitle: "Développeur Junior",
+                location: new THREE.Vector3(20, 0, -10),
+                dialogues: [
+                    {
+                        text: "Félicitations pour ton diplôme ! Une startup recherche un développeur junior. Intéressé ?",
+                        options: [
+                            { text: "Bien sûr, c'est une opportunité parfaite !", nextIndex: 1 },
+                            { text: "Quelles seront mes responsabilités ?", nextIndex: 2 }
+                        ]
+                    },
+                    {
+                        text: "Super ! Tu commences lundi. Prépare-toi à travailler sur leur site e-commerce.",
+                        options: [
+                            { text: "J'ai hâte de commencer !", nextIndex: -1, action: "goToNextMission" }
+                        ]
+                    },
+                    {
+                        text: "Tu travailleras principalement sur le front-end, en utilisant React. Tu auras aussi l'occasion d'apprendre sur le tas.",
+                        options: [
+                            { text: "Ça me convient parfaitement.", nextIndex: 1 }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "PROJET AMBITIEUX",
+                subtitle: "Lead Developer",
+                location: new THREE.Vector3(40, 0, -10),
+                dialogues: [
+                    {
+                        text: "Après 2 ans d'expérience, une entreprise te propose de diriger un projet d'application 3D interactive.",
+                        options: [
+                            { text: "C'est exactement ce que je recherche !", nextIndex: 1 },
+                            { text: "Est-ce que j'ai les compétences nécessaires ?", nextIndex: 2 }
+                        ]
+                    },
+                    {
+                        text: "Excellent ! Tu vas pouvoir utiliser Three.js et montrer tout ton potentiel.",
+                        options: [
+                            { text: "Je vais donner le meilleur de moi-même.", nextIndex: -1, action: "goToNextMission" }
+                        ]
+                    },
+                    {
+                        text: "Tu as déjà une bonne base, et c'est l'occasion parfaite pour développer tes compétences en 3D et en gestion d'équipe.",
+                        options: [
+                            { text: "Dans ce cas, j'accepte le défi !", nextIndex: 1 }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "ENTREPRENEUR",
+                subtitle: "Création de ta propre entreprise",
+                location: new THREE.Vector3(60, 0, -10),
+                dialogues: [
+                    {
+                        text: "Ton projet a été un succès ! Tu as maintenant l'opportunité de créer ta propre entreprise de développement.",
+                        options: [
+                            { text: "C'est mon rêve ! Je fonce !", nextIndex: 1 },
+                            { text: "Quels sont les risques ?", nextIndex: 2 }
+                        ]
+                    },
+                    {
+                        text: "Félicitations ! Tu es maintenant à la tête de ta propre entreprise de développement web et 3D.",
+                        options: [
+                            { text: "Le début d'une nouvelle aventure !", nextIndex: -1, action: "completeGame" }
+                        ]
+                    },
+                    {
+                        text: "Comme toute entreprise, il y a des risques financiers, mais avec ton expérience et ton réseau, tu as de bonnes chances de réussir.",
+                        options: [
+                            { text: "Je suis prêt à relever ce défi !", nextIndex: 1 }
+                        ]
+                    }
+                ]
+            }
+        ];
+        
+        let currentMission = 0;
+        let currentDialogue = 0;
+        
+        function startGame() {
+            initThreeJS();
+            createWorld();
+            setupEventListeners();
+            animate();
+            
+            // Afficher la première mission
+            showMissionTitle(missions[currentMission].title, missions[currentMission].subtitle);
+        }
+        
+        function initThreeJS() {
+            // Initialisation de la scène Three.js
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Ciel bleu
+            scene.fog = new THREE.Fog(0x87CEEB, 0, 500);
+            
+            // Caméra
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.y = 1.7; // Hauteur des yeux
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+            
+            // Contrôles de caméra style FPS
+            controls = new THREE.PointerLockControls(camera, document.body);
+            
+            // Lumières
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(50, 50, 0);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 500;
+            scene.add(directionalLight);
+            
+            // Gestion du redimensionnement de la fenêtre
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+        
+        function createWorld() {
+            // Sol
+            const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x1a5e1a,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // Route principale
+            const roadGeometry = new THREE.PlaneGeometry(10, 100);
+            const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const road = new THREE.Mesh(roadGeometry, roadMaterial);
+            road.rotation.x = -Math.PI / 2;
+            road.position.y = 0.01; // Légèrement au-dessus du sol pour éviter le z-fighting
+            scene.add(road);
+            
+            // Bâtiments pour chaque mission
+            createBuilding(0, 0, -20, 0x8e44ad, "ÉCOLE DE CODE");
+            createBuilding(20, 0, -20, 0x3498db, "STARTUP TECH");
+            createBuilding(40, 0, -20, 0xe74c3c, "ENTREPRISE 3D");
+            createBuilding(60, 0, -20, 0x2ecc71, "VOTRE ENTREPRISE");
+            
+            // Personnages NPC
+            createNPC(0, 0, -10, 0xffdd00);
+            createNPC(20, 0, -10, 0xff5500);
+            createNPC(40, 0, -10, 0x00aaff);
+            createNPC(60, 0, -10, 0x00ff00);
+            
+            // Objets décoratifs
+            createDecorations();
+            
+            // Créer des marqueurs pour les missions
+            for (let i = 0; i < missions.length; i++) {
+                createMissionMarker(missions[i].location);
+            }
+        }
+        
+        function createBuilding(x, y, z, color, name) {
+            // Bâtiment principal
+            const buildingGeometry = new THREE.BoxGeometry(8, 10, 8);
+            const buildingMaterial = new THREE.MeshStandardMaterial({ color: color });
+            const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+            building.position.set(x, y + 5, z);
+            building.castShadow = true;
+            building.receiveShadow = true;
+            scene.add(building);
+            
+            // Porte
+            const doorGeometry = new THREE.BoxGeometry(1.5, 2.5, 0.1);
+            const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            const door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(x, y + 1.25, z + 4);
+            scene.add(door);
+            
+            // Fenêtres
+            for (let i = 0; i < 2; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const windowGeometry = new THREE.BoxGeometry(1, 1, 0.1);
+                    const windowMaterial = new THREE.MeshStandardMaterial({ color: 0x87CEFA });
+                    const window = new THREE.Mesh(windowGeometry, windowMaterial);
+                    window.position.set(x - 2 + i * 4, y + 3 + j * 2, z + 4.01);
+                    scene.add(window);
+                }
+            }
+            
+            // Texte du nom du bâtiment
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 128;
+            context.fillStyle = '#ffffff';
+            context.font = 'Bold 60px Arial';
+            context.textAlign = 'center';
+            context.fillText(name, 256, 80);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const signGeometry = new THREE.PlaneGeometry(4, 1);
+            const signMaterial = new THREE.MeshBasicMaterial({ 
+                map: texture,
+                transparent: true
+            });
+            const sign = new THREE.Mesh(signGeometry, signMaterial);
+            sign.position.set(x, y + 8, z + 4.01);
+            scene.add(sign);
+        }
+        
+        function createNPC(x, y, z, color) {
+            // Corps
+            const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: color });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.set(x, y + 0.9, z);
+            body.castShadow = true;
+            scene.add(body);
+            
+            // Tête
+            const headGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const headMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.set(x, y + 1.7, z);
+            head.castShadow = true;
+            scene.add(head);
+            
+            // Créer un groupe pour l'animation
+            const npcGroup = new THREE.Group();
+            npcGroup.add(body);
+            npcGroup.add(head);
+            npcGroup.userData = { 
+    type: 'npc', 
+    missionIndex: missions.findIndex(m => 
+        m.location.x === x && m.location.y === y && m.location.z === z) 
+};
+
+            scene.add(npcGroup);
+            
+            return npcGroup;
+        }
+        
+        function createMissionMarker(position) {
+            const markerGeometry = new THREE.CylinderGeometry(0.5, 0, 1, 8);
+            const markerMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffff00,
+                emissive: 0xffff00,
+                emissiveIntensity: 0.5
+            });
+            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+            marker.position.set(position.x, position.y + 3, position.z);
+            
+            // Animation flottante sans utiliser TWEEN
+            // On utilise une propriété personnalisée pour suivre l'animation
+            marker.userData = { 
+                animationPhase: Math.random() * Math.PI * 2, // Phase aléatoire pour que tous les marqueurs ne bougent pas en même temps
+                animationSpeed: 0.02
+            };
+            
+            // On ajoute le marqueur à un tableau pour pouvoir l'animer plus tard
+            if (!window.missionMarkers) window.missionMarkers = [];
+            window.missionMarkers.push(marker);
+            
+            scene.add(marker);
+        }
+        
+        // Fonction pour animer les marqueurs de mission
+        function animateMissionMarkers() {
+            if (window.missionMarkers) {
+                window.missionMarkers.forEach(marker => {
+                    // Mettre à jour la phase d'animation
+                    marker.userData.animationPhase += marker.userData.animationSpeed;
+                    
+                    // Appliquer le mouvement vertical
+                    const originalY = marker.position.y - Math.sin(marker.userData.animationPhase) * 0.3;
+                    marker.position.y = originalY + Math.sin(marker.userData.animationPhase) * 0.3;
+                    
+                    // Rotation
+                    marker.rotation.y += 0.02;
+                });
+            }
+        }
+        
+        function createDecorations() {
+            // Arbres
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * 200 - 100;
+                const z = Math.random() * 200 - 100;
+                
+                // Éviter de placer des arbres sur la route ou les bâtiments
+                if (Math.abs(x) < 10 || 
+                    (Math.abs(x - 20) < 5 && Math.abs(z + 20) < 5) ||
+                    (Math.abs(x - 40) < 5 && Math.abs(z + 20) < 5) ||
+                    (Math.abs(x - 60) < 5 && Math.abs(z + 20) < 5)) {
+                    continue;
+                }
+                
+                // Tronc
+                const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1.5, 8);
+                const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.set(x, 0.75, z);
+                trunk.castShadow = true;
+                scene.add(trunk);
+                
+                // Feuillage
+                const leavesGeometry = new THREE.ConeGeometry(1, 2, 8);
+                const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+                const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                leaves.position.set(x, 2.5, z);
+                leaves.castShadow = true;
+                scene.add(leaves);
+            }
+            
+            // Lampadaires
+            for (let i = -10; i <= 70; i += 10) {
+                createLamppost(i, 0, -5);
+                createLamppost(i, 0, 5);
+            }
+        }
+        
+        function createLamppost(x, y, z) {
+            // Poteau
+            const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 3, 8);
+            const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+            pole.position.set(x, y + 1.5, z);
+            scene.add(pole);
+            
+            // Lampe
+            const lampGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+            const lampMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffff00,
+                emissive: 0xffff00,
+                emissiveIntensity: 0.5
+            });
+            const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
+            lamp.position.set(x, y + 3, z);
+            scene.add(lamp);
+            
+            // Lumière
+            const light = new THREE.PointLight(0xffff00, 1, 10);
+            light.position.set(x, y + 3, z);
+            scene.add(light);
+        }
+        
+        function setupEventListeners() {
+            // Contrôles clavier
+            const onKeyDown = function(event) {
+                switch (event.code) {
+                    case 'ArrowUp':
+                    case 'KeyW':
+                        moveForward = true;
+                        break;
+                    case 'ArrowLeft':
+                    case 'KeyA':
+                        moveLeft = true;
+                        break;
+                    case 'ArrowDown':
+                    case 'KeyS':
+                        moveBackward = true;
+                        break;
+                    case 'ArrowRight':
+                    case 'KeyD':
+                        moveRight = true;
+                        break;
+                    case 'Space':
+                        if (canJump === true) velocity.y += 350;
+                        canJump = false;
+                        break;
+                    case 'KeyE':
+                        checkInteraction();
+                        break;
+                }
+            };
+            
+            const onKeyUp = function(event) {
+                switch (event.code) {
+                    case 'ArrowUp':
+                    case 'KeyW':
+                        moveForward = false;
+                        break;
+                    case 'ArrowLeft':
+                    case 'KeyA':
+                        moveLeft = false;
+                        break;
+                    case 'ArrowDown':
+                    case 'KeyS':
+                        moveBackward = false;
+                        break;
+                    case 'ArrowRight':
+                    case 'KeyD':
+                        moveRight = false;
+                        break;
+                }
+            };
+            
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            
+            // Verrouillage du pointeur pour les contrôles FPS
+            renderer.domElement.addEventListener('click', () => {
+                controls.lock();
+            });
+            
+            controls.addEventListener('lock', () => {
+                document.getElementById('dialog-box').style.display = 'none';
+            });
+            
+            controls.addEventListener('unlock', () => {
+                // Rien à faire ici pour l'instant
+            });
+            
+            // Gestion des options de dialogue
+            document.getElementById('dialog-options').addEventListener('click', (event) => {
+                if (event.target.classList.contains('dialog-option')) {
+                    const optionIndex = parseInt(event.target.dataset.index);
+                    const option = missions[currentMission].dialogues[currentDialogue].options[optionIndex];
+                    
+                    if (option.action === 'goToNextMission') {
+                        document.getElementById('dialog-box').style.display = 'none';
+                        currentMission++;
+                        currentDialogue = 0;
+                        
+                        if (currentMission < missions.length) {
+                            showMissionTitle(missions[currentMission].title, missions[currentMission].subtitle);
+                            // Téléporter le joueur à la prochaine mission
+                            camera.position.set(
+                                missions[currentMission].location.x - 5,
+                                1.7,
+                                missions[currentMission].location.z
+                            );
+                        }
+                    } else if (option.action === 'completeGame') {
+                        document.getElementById('dialog-box').style.display = 'none';
+                        showGameCompletion();
+                    } else if (option.nextIndex >= 0) {
+                        currentDialogue = option.nextIndex;
+                        showDialogue(missions[currentMission].dialogues[currentDialogue]);
+                    }
+                }
+            });
+        }
+        
+        function checkInteraction() {
+    // Vérifier si le joueur est proche d'un NPC
+    const playerPosition = camera.position.clone();
+    
+    // Parcourir tous les objets de la scène pour trouver les NPCs
+    scene.traverse((object) => {
+        if (object.userData && object.userData.type === 'npc') {
+            // Utiliser la position du groupe NPC
+            const npcPosition = new THREE.Vector3();
+            object.getWorldPosition(npcPosition);
+            const distance = playerPosition.distanceTo(npcPosition);
+            
+            // Si le joueur est assez proche et que c'est la mission actuelle
+            if (distance < 3 && object.userData.missionIndex === currentMission) {
+                showDialogue(missions[currentMission].dialogues[currentDialogue]);
+            }
+        }
+    });
+}
+
+        
+        function showDialogue(dialogue) {
+            const dialogBox = document.getElementById('dialog-box');
+            const dialogText = document.getElementById('dialog-text');
+            const dialogOptions = document.getElementById('dialog-options');
+            
+            dialogText.textContent = dialogue.text;
+            dialogOptions.innerHTML = '';
+            
+            dialogue.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.classList.add('dialog-option');
+                optionElement.textContent = option.text;
+                optionElement.dataset.index = index;
+                dialogOptions.appendChild(optionElement);
+            });
+            
+            dialogBox.style.display = 'block';
+        }
+        
+        function showMissionTitle(title, subtitle) {
+            const missionTitle = document.getElementById('mission-title');
+            const missionSubtitle = document.getElementById('mission-subtitle');
+            
+            missionTitle.textContent = title;
+            missionSubtitle.textContent = subtitle;
+            
+            // Animation de fondu
+            missionTitle.style.opacity = '1';
+            missionSubtitle.style.opacity = '1';
+            
+            setTimeout(() => {
+                missionTitle.style.opacity = '0';
+                missionSubtitle.style.opacity = '0';
+            }, 5000);
+        }
+        
+        function showGameCompletion() {
+            // Créer un écran de fin de jeu
+            const completionScreen = document.createElement('div');
+            completionScreen.style.position = 'fixed';
+            completionScreen.style.top = '0';
+            completionScreen.style.left = '0';
+            completionScreen.style.width = '100%';
+            completionScreen.style.height = '100%';
+            completionScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+            completionScreen.style.display = 'flex';
+            completionScreen.style.flexDirection = 'column';
+            completionScreen.style.justifyContent = 'center';
+            completionScreen.style.alignItems = 'center';
+            completionScreen.style.zIndex = '1000';
+            
+            const title = document.createElement('h1');
+            title.textContent = 'FÉLICITATIONS !';
+            title.style.color = '#4CAF50';
+            title.style.fontSize = '4em';
+            title.style.marginBottom = '20px';
+            
+            const subtitle = document.createElement('h2');
+            subtitle.textContent = 'Vous avez complété votre parcours de développeur !';
+            subtitle.style.color = 'white';
+            subtitle.style.fontSize = '2em';
+            subtitle.style.marginBottom = '40px';
+            subtitle.style.textAlign = 'center';
+            
+            const description = document.createElement('p');
+            description.innerHTML = `
+                Vous êtes maintenant à la tête de votre propre entreprise de développement.<br>
+                Vos compétences en programmation, en 3D et en gestion de projet<br>
+                vous ont permis de réaliser votre rêve.<br><br>
+                Merci d'avoir joué à ce portfolio interactif !
+            `;
+            description.style.color = 'white';
+            description.style.fontSize = '1.5em';
+            description.style.textAlign = 'center';
+            description.style.marginBottom = '40px';
+            
+            const contactButton = document.createElement('button');
+            contactButton.textContent = 'CONTACTEZ-MOI';
+            contactButton.style.padding = '15px 30px';
+            contactButton.style.backgroundColor = '#4CAF50';
+            contactButton.style.color = 'white';
+            contactButton.style.border = 'none';
+            contactButton.style.borderRadius = '5px';
+            contactButton.style.fontSize = '1.5em';
+            contactButton.style.cursor = 'pointer';
+            contactButton.onclick = () => {
+                window.location.href = 'mailto:votre.email@example.com';
+            };
+            
+            const restartButton = document.createElement('button');
+            restartButton.textContent = 'RECOMMENCER';
+            restartButton.style.padding = '10px 20px';
+            restartButton.style.backgroundColor = 'transparent';
+            restartButton.style.color = 'white';
+            restartButton.style.border = '2px solid white';
+            restartButton.style.borderRadius = '5px';
+            restartButton.style.fontSize = '1.2em';
+            restartButton.style.cursor = 'pointer';
+            restartButton.style.marginTop = '20px';
+            restartButton.onclick = () => {
+                location.reload();
+            };
+            
+            completionScreen.appendChild(title);
+            completionScreen.appendChild(subtitle);
+            completionScreen.appendChild(description);
+            completionScreen.appendChild(contactButton);
+            completionScreen.appendChild(restartButton);
+            
+            document.body.appendChild(completionScreen);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Animer les marqueurs de mission
+            animateMissionMarkers();
+            
+            if (controls.isLocked === true) {
+                const time = performance.now();
+                const delta = (time - prevTime) / 1000;
+                
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+                velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+                
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize(); // this ensures consistent movements in all directions
+                
+                if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+                
+                controls.moveRight(-velocity.x * delta);
+                controls.moveForward(-velocity.z * delta);
+                
+                camera.position.y += (velocity.y * delta); // new behavior
+                
+                if (camera.position.y < 1.7) {
+                    velocity.y = 0;
+                    camera.position.y = 1.7;
+                    canJump = true;
+                }
+                
+                // Limites du monde
+                if (camera.position.x < -100) camera.position.x = -100;
+                if (camera.position.x > 100) camera.position.x = 100;
+                if (camera.position.z < -100) camera.position.z = -100;
+                if (camera.position.z > 100) camera.position.z = 100;
+                
+                // Mise à jour de la mini-carte
+                updateMiniMap();
+                
+                prevTime = time;
+            }
+            
+            // Rendu de la scène
+            renderer.render(scene, camera);
+        }
+        
+        function updateMiniMap() {
+            // Vérifier si le contexte de la mini-carte est disponible
+            if (!miniMapContext) return;
+            
+            // Effacer la mini-carte
+            miniMapContext.clearRect(0, 0, miniMapCanvas.width, miniMapCanvas.height);
+            
+            // Dessiner le fond
+            miniMapContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            miniMapContext.fillRect(0, 0, miniMapCanvas.width, miniMapCanvas.height);
+            
+            // Dessiner la route
+            miniMapContext.fillStyle = '#333';
+            miniMapContext.fillRect(90, 0, 20, miniMapCanvas.height);
+            
+            // Dessiner les bâtiments
+            miniMapContext.fillStyle = '#8e44ad';
+            miniMapContext.fillRect(85, 150, 30, 30);
+            
+            miniMapContext.fillStyle = '#3498db';
+            miniMapContext.fillRect(85, 100, 30, 30);
+            
+            miniMapContext.fillStyle = '#e74c3c';
+            miniMapContext.fillRect(85, 50, 30, 30);
+            
+            miniMapContext.fillStyle = '#2ecc71';
+            miniMapContext.fillRect(85, 0, 30, 30);
+            
+            // Dessiner le joueur (point blanc)
+            const playerX = 100 + (camera.position.x / 200) * 100;
+            const playerZ = 100 - (camera.position.z / 200) * 100;
+            
+            miniMapContext.fillStyle = '#fff';
+            miniMapContext.beginPath();
+            miniMapContext.arc(playerX, playerZ, 5, 0, Math.PI * 2);
+            miniMapContext.fill();
+            
+            // Dessiner la direction du joueur
+            const angle = controls.getObject().rotation.y;
+            miniMapContext.strokeStyle = '#fff';
+            miniMapContext.beginPath();
+            miniMapContext.moveTo(playerX, playerZ);
+            miniMapContext.lineTo(
+                playerX + Math.sin(angle) * 10,
+                playerZ + Math.cos(angle) * 10
+            );
+            miniMapContext.stroke();
+            
+            // Dessiner les marqueurs de mission
+            missions.forEach((mission, index) => {
+                const missionX = 100 + (mission.location.x / 200) * 100;
+                const missionZ = 100 - (mission.location.z / 200) * 100;
+                
+                miniMapContext.fillStyle = index === currentMission ? '#ff0' : '#aaa';
+                miniMapContext.beginPath();
+                miniMapContext.arc(missionX, missionZ, 3, 0, Math.PI * 2);
+                miniMapContext.fill();
+            });
+        }
+    </script>
+</body>
+</html>
+
+
